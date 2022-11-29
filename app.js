@@ -30,7 +30,7 @@ app.get('/crash-test', () => {
 });
 
 app.use(requestLogger);
-app.use(helmet);
+app.use(helmet());
 app.use(rateLimit);
 app.use(routes);
 app.use(errorLogger);
