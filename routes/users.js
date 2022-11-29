@@ -6,6 +6,6 @@ const {
 } = require('../controllers/user');
 
 usersRouter.get('/me', getMeUser);
-usersRouter.patch('/me', updateUser, userUpdateValid);
+usersRouter.patch('/me', userUpdateValid, updateUser);
 
 module.exports = usersRouter;

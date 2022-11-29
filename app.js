@@ -3,12 +3,15 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
 const { errors } = require('celebrate');
 const routes = require('./routes');
 const errorsHandler = require('./middlewares/errorsHandler');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
+const rateLimit = require('./middlewares/rateLimit');
+const { MONGO_URL } = require('./utils/constants');
 
-const { PORT = 3001, MONGO_URL = 'mongodb://127.0.0.1:27017/bitfilmsdb' } = process.env;
+const { PORT = 3001 } = process.env;
 
 const app = express();
 
@@ -27,6 +30,8 @@ app.get('/crash-test', () => {
 });
 
 app.use(requestLogger);
+app.use(helmet);
+app.use(rateLimit);
 app.use(routes);
 app.use(errorLogger);
 app.use(errors());

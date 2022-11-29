@@ -2,10 +2,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { MONGO_DB_CODE } = require('../utils/constants');
-const BadRequestError = require('../Errors/BadRequestError'); // 400
-const NotFoundError = require('../Errors/NotFoundError'); // 404
-const ConflictError = require('../Errors/ConflictError'); // 409
-const UnauthError = require('../Errors/UnauthError'); // 401
+const BadRequestError = require('../errors/BadRequestError'); // 400
+const NotFoundError = require('../errors/NotFoundError'); // 404
+const ConflictError = require('../errors/ConflictError'); // 409
+const { CAST_ERROR, VALIDATION_ERROR } = require('../utils/constants');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -25,7 +25,7 @@ module.exports.createUser = (req, res, next) => {
       if (err.code === MONGO_DB_CODE) {
         return next(new ConflictError('Пользователь с таким email уже существует. '));
       }
-      if (err.message === 'Validation failed') {
+      if (err.message === VALIDATION_ERROR) {
         return next(new BadRequestError('Ошибка валидации. Переданы некорректные данные при создании профиля. '));
       }
       return next(err);
@@ -44,17 +44,12 @@ module.exports.loginUser = (req, res, next) => {
         })
         .send({ message: 'Авторизация прошла успешно. ' });
     })
-    .catch((err) => {
-      if (err.message === 'Неправильные почта или пароль') {
-        return next(new UnauthError(err.message));
-      }
-      return next(err);
-    });
+    .catch(next);
 };
 
 module.exports.logoutUser = (req, res) => {
   res
-    .clearCookie('jwt', { secure: 'true', sameSite: 'none' }).send()
+    .clearCookie('jwt', { secure: 'true', sameSite: 'none' })
     .send({ message: 'Деавторизация прошла успешно. ' });
 };
 
@@ -64,10 +59,7 @@ module.exports.getMeUser = (req, res, next) => {
     .orFail(new NotFoundError('Пользователь не найден. '))
     .then((user) => res.send(user))
     .catch((err) => {
-      if (err.message === 'NotFound') {
-        return next(new NotFoundError('Пользователь по указанному _id не найден. '));
-      }
-      if (err.name === 'CastError') {
+      if (err.name === CAST_ERROR) {
         return next(new BadRequestError('Передан не корректный _id пользователя. '));
       }
       return next(err);
@@ -81,10 +73,7 @@ module.exports.updateUser = (req, res, next) => {
     .orFail(new NotFoundError('Пользователь не найден. '))
     .then((user) => res.send(user))
     .catch((err) => {
-      if (err.message === 'NotFound') {
-        return next(new NotFoundError('Пользователь по указанному _id не найден. '));
-      }
-      if (err.message === 'Validation failed') {
+      if (err.message === VALIDATION_ERROR) {
         return next(new BadRequestError('Ошибка валидации. Переданы некорректные данные при обновлении профиля. '));
       }
       if (err.code === MONGO_DB_CODE) {
