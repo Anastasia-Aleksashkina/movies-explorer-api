@@ -17,16 +17,18 @@ module.exports.createUser = (req, res, next) => {
   bcrypt
     .hash(password, 10)
     .then((hash) => User.create({
-      email, password: hash, name,
+      email,
+      password: hash,
+      name,
     }))
     .then((user) => User.findById(user._id))
-    .then((user) => res.send(user))
+    .then(() => res.send({ email, name }))
     .catch((err) => {
       if (err.code === MONGO_DB_CODE) {
-        return next(new ConflictError('Пользователь с таким email уже существует. '));
+        return next(new ConflictError('Пользователь с таким email уже существует.'));
       }
       if (err.message === VALIDATION_ERROR) {
-        return next(new BadRequestError('Ошибка валидации. Переданы некорректные данные при создании профиля. '));
+        return next(new BadRequestError('Ошибка валидации. Переданы некорректные данные при создании профиля.'));
       }
       return next(err);
     });
@@ -42,7 +44,7 @@ module.exports.loginUser = (req, res, next) => {
         .cookie('jwt', token, {
           maxAge: 3600000 * 24 * 7, httpOnly: true, sameSite: 'None', secure: true,
         })
-        .send({ message: 'Авторизация прошла успешно. ' });
+        .send({ name: user.name, email: user.email });
     })
     .catch(next);
 };
